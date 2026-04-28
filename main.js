@@ -18,77 +18,122 @@ class StockCalendar extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this.currentDate = new Date();
+    }
+
+    static get observedAttributes() {
+        return ['view'];
+    }
+
+    attributeChangedCallback() {
+        this.render();
+    }
+
+    connectedCallback() {
         this.render();
     }
 
     render() {
+        const view = this.getAttribute('view') || 'monthly';
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="style.css">
-            <div id="monthly-calendar-container"></div>
-            <div id="weekly-calendar-container"></div>
+            <div id="calendar-container"></div>
         `;
-        this.renderMonthlyCalendar();
-        this.renderWeeklyCalendar();
+        if (view === 'monthly') {
+            this.renderMonthlyCalendar();
+        } else {
+            this.renderWeeklyCalendar();
+        }
     }
 
     renderMonthlyCalendar() {
-        const container = this.shadowRoot.querySelector('#monthly-calendar-container');
-        const monthYear = this.currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+        const container = this.shadowRoot.querySelector('#calendar-container');
+        const monthYear = this.currentDate.toLocaleString('ko-KR', { month: 'long', year: 'numeric' });
+        const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
 
-        let calendarHtml = `<h3>${monthYear}</h3><div class="calendar">`;
+        let calendarHtml = `<table class="calendar-table"><thead><tr>`;
+        weekdays.forEach(day => {
+            calendarHtml += `<th>${day}</th>`;
+        });
+        calendarHtml += `</tr></thead><tbody><tr>`;
 
         const daysInMonth = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 0).getDate();
         const firstDayOfMonth = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1).getDay();
 
         for (let i = 0; i < firstDayOfMonth; i++) {
-            calendarHtml += `<div class="calendar-day"></div>`;
+            calendarHtml += `<td></td>`;
         }
 
+        let dayCounter = firstDayOfMonth;
         for (let i = 1; i <= daysInMonth; i++) {
+            if (dayCounter % 7 === 0 && i !== 1) {
+                calendarHtml += `</tr><tr>`;
+            }
             const dateStr = `${this.currentDate.getFullYear()}-${String(this.currentDate.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
             calendarHtml += `
-                <div class="calendar-day">
+                <td class="calendar-day">
                     <div class="calendar-day-header">${i}</div>
                     ${this.getEventsForDate(dateStr)}
-                </div>`;
+                </td>`;
+            dayCounter++;
         }
 
-        calendarHtml += `</div>`;
+        while (dayCounter % 7 !== 0) {
+            calendarHtml += `<td></td>`;
+            dayCounter++;
+        }
+
+        calendarHtml += `</tr></tbody></table>`;
         container.innerHTML = calendarHtml;
+        
+        // Update title in parent document if it exists
+        const titleEl = document.querySelector('#monthly-view-title');
+        if (titleEl) titleEl.textContent = monthYear;
     }
     
     renderWeeklyCalendar() {
-    const container = this.shadowRoot.querySelector('#weekly-calendar-container');
-    const weekStart = new Date(this.currentDate);
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 6);
+        const container = this.shadowRoot.querySelector('#calendar-container');
+        const weekStart = new Date(this.currentDate);
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        
+        const weekYear = this.currentDate.getFullYear();
+        const weekMonth = this.currentDate.toLocaleString('ko-KR', { month: 'long' });
+        const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
 
-    const weekYear = this.currentDate.toLocaleString('default', { year: 'numeric' });
-    const weekMonth = this.currentDate.toLocaleString('default', { month: 'long' });
+        let calendarHtml = `<table class="calendar-table"><thead><tr>`;
+        weekdays.forEach(day => {
+            calendarHtml += `<th>${day}</th>`;
+        });
+        calendarHtml += `</tr></thead><tbody><tr>`;
 
+        for (let i = 0; i < 7; i++) {
+            const day = new Date(weekStart);
+            day.setDate(day.getDate() + i);
+            const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+            calendarHtml += `
+                <td class="calendar-day">
+                    <div class="calendar-day-header">${day.getDate()}</div>
+                    ${this.getEventsForDate(dateStr)}
+                </td>`;
+        }
 
-    let calendarHtml = `<h3>${weekMonth} ${weekYear}</h3><div class="calendar">`;
+        calendarHtml += `</tr></tbody></table>`;
+        container.innerHTML = calendarHtml;
 
-    for (let i = 0; i < 7; i++) {
-        const day = new Date(weekStart);
-        day.setDate(day.getDate() + i);
-        const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
-        calendarHtml += `
-            <div class="calendar-day">
-                <div class="calendar-day-header">${day.getDate()}</div>
-                ${this.getEventsForDate(dateStr)}
-            </div>`;
-    }
-
-    calendarHtml += `</div>`;
-    container.innerHTML = calendarHtml;
+        // Update title in parent document
+        const titleEl = document.querySelector('#weekly-view-title');
+        if (titleEl) {
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            titleEl.textContent = `${weekStart.toLocaleDateString('ko-KR')} ~ ${weekEnd.toLocaleDateString('ko-KR')}`;
+        }
     }
 
 
     getEventsForDate(date) {
         const eventsForDate = events[date] || [];
-        const country = document.querySelector('input[name="country"]:checked').value;
+        const countryEl = document.querySelector('input[name="country"]:checked');
+        if (!countryEl) return '';
+        const country = countryEl.value;
         const eventTypes = Array.from(document.querySelectorAll('input[name="event-type"]:checked')).map(el => el.value);
 
         return eventsForDate
@@ -106,35 +151,37 @@ class StockCalendar extends HTMLElement {
 customElements.define('stock-calendar', StockCalendar);
 
 document.addEventListener('DOMContentLoaded', () => {
-    const calendar = document.createElement('stock-calendar');
-    document.querySelector('#monthly-calendar').appendChild(calendar);
+    const monthlyCalendar = document.createElement('stock-calendar');
+    monthlyCalendar.setAttribute('view', 'monthly');
+    document.querySelector('#monthly-calendar').appendChild(monthlyCalendar);
+
+    const weeklyCalendar = document.createElement('stock-calendar');
+    weeklyCalendar.setAttribute('view', 'weekly');
+    document.querySelector('#weekly-calendar').appendChild(weeklyCalendar);
 
     document.querySelector('#apply-filters').addEventListener('click', () => {
-        calendar.render(); 
+        monthlyCalendar.render(); 
+        weeklyCalendar.render();
     });
     
     document.querySelector('#prev-month').addEventListener('click', () => {
-        const stockCalendar = document.querySelector('stock-calendar');
-        stockCalendar.currentDate.setMonth(stockCalendar.currentDate.getMonth() - 1);
-        stockCalendar.render();
+        monthlyCalendar.currentDate.setMonth(monthlyCalendar.currentDate.getMonth() - 1);
+        monthlyCalendar.render();
     });
 
     document.querySelector('#next-month').addEventListener('click', () => {
-        const stockCalendar = document.querySelector('stock-calendar');
-        stockCalendar.currentDate.setMonth(stockCalendar.currentDate.getMonth() + 1);
-        stockCalendar.render();
+        monthlyCalendar.currentDate.setMonth(monthlyCalendar.currentDate.getMonth() + 1);
+        monthlyCalendar.render();
     });
     
     document.querySelector('#prev-week').addEventListener('click', () => {
-    const stockCalendar = document.querySelector('stock-calendar');
-    stockCalendar.currentDate.setDate(stockCalendar.currentDate.getDate() - 7);
-    stockCalendar.render();
+        weeklyCalendar.currentDate.setDate(weeklyCalendar.currentDate.getDate() - 7);
+        weeklyCalendar.render();
     });
 
     document.querySelector('#next-week').addEventListener('click', () => {
-        const stockCalendar = document.querySelector('stock-calendar');
-        stockCalendar.currentDate.setDate(stockCalendar.currentDate.getDate() + 7);
-        stockCalendar.render();
+        weeklyCalendar.currentDate.setDate(weeklyCalendar.currentDate.getDate() + 7);
+        weeklyCalendar.render();
     });
 
 
