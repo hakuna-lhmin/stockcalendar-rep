@@ -94,19 +94,20 @@ h1 {
     border-collapse: collapse;
     table-layout: fixed;
     margin-bottom: 20px;
+    border: 1px solid var(--dark-grey);
 }
 
 .calendar-table th {
     background-color: var(--grey);
     padding: 10px;
-    border: 1px solid var(--grey);
+    border: 1px solid var(--dark-grey);
     text-align: center;
     font-weight: bold;
 }
 
 .calendar-table td {
     min-height: 100px;
-    border: 1px solid var(--grey);
+    border: 1px solid var(--dark-grey);
     padding: 5px;
     vertical-align: top;
     height: 120px;
