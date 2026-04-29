@@ -251,10 +251,83 @@ input:checked + .check-mark::after {
     vertical-align: top;
 }
 
+.calendar-table td.empty-day {
+    background: #f8fafc;
+}
+
 .calendar-day-header {
     font-size: 0.875rem;
     font-weight: 700;
     margin-bottom: 8px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.calendar-day-header small {
+    color: var(--text-muted);
+    font-size: 0.6875rem;
+    font-weight: 600;
+}
+
+.weekly-view .calendar-table td {
+    height: 360px;
+}
+
+.event-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.event-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.event-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--card-shadow);
+    transform: translateY(-1px);
+}
+
+.event-card .badge {
+    width: 24px;
+    height: 24px;
+    font-size: 13px;
+    margin-right: 0;
+}
+
+.event-date {
+    min-width: 60px;
+    font-weight: 800;
+    color: var(--primary-color);
+}
+
+.event-info {
+    min-width: 0;
+}
+
+.event-title {
+    font-weight: 700;
+}
+
+.event-detail {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.empty-state {
+    padding: 40px;
+    text-align: center;
+    color: #94a3b8;
 }
 
 /* Badges */

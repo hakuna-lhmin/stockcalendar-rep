@@ -82,6 +82,7 @@ class CalendarManager {
     render() {
         const container = document.querySelector('#calendar-container');
         const title = document.querySelector('#view-title');
+        container.className = `calendar-view ${this.currentView}-view`;
         
         if (this.currentView === 'monthly') {
             title.textContent = `${this.currentDate.getFullYear()}년 ${this.currentDate.getMonth() + 1}월`;
@@ -90,7 +91,7 @@ class CalendarManager {
             const start = this.getWeekStart(this.currentDate);
             const end = new Date(start);
             end.setDate(end.getDate() + 6);
-            title.textContent = `${start.getMonth()+1}/${start.getDate()} ~ ${end.getMonth()+1}/${end.getDate()}`;
+            title.textContent = `${start.getFullYear()}년 ${start.getMonth() + 1}/${start.getDate()} ~ ${end.getMonth() + 1}/${end.getDate()}`;
             this.renderWeekly(container);
         } else {
             title.textContent = `${this.currentDate.getFullYear()}년 ${this.currentDate.getMonth() + 1}월 일정`;
@@ -131,6 +132,10 @@ class CalendarManager {
             </td>`;
         }
         
+        const usedCells = firstDay + lastDate;
+        const trailingCells = (7 - (usedCells % 7)) % 7;
+        for (let i = 0; i < trailingCells; i++) html += '<td class="empty-day"></td>';
+
         html += '</tr></tbody></table>';
         container.innerHTML = html;
     }
@@ -150,7 +155,10 @@ class CalendarManager {
             const dayEvents = filtered.filter(ev => ev.date === dateStr);
 
             html += `<td>
-                <div class="calendar-day-header">${current.getDate()}</div>
+                <div class="calendar-day-header">
+                    <span>${current.getDate()}</span>
+                    <small>${current.getMonth() + 1}월</small>
+                </div>
                 <div class="day-events">
                     ${dayEvents.map(ev => `
                         <div class="event-item" onclick="window.calendar.showDetail(\'${ev.title}\', \'${ev.detail}\')">
@@ -177,19 +185,19 @@ class CalendarManager {
         }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
         if (monthEvents.length === 0) {
-            container.innerHTML = '<div style="padding: 40px; text-align: center; color: #94a3b8;">해당 월에 일정이 없습니다.</div>';
+            container.innerHTML = '<div class="empty-state">해당 월에 일정이 없습니다.</div>';
             return;
         }
 
-        let html = '<div class="list-view" style="display: flex; flex-direction: column; gap: 12px;">';
+        let html = '<div class="event-list">';
         monthEvents.forEach(ev => {
             html += `
-                <div class="event-card" style="padding: 16px; border: 1px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 16px; cursor: pointer;" onclick="window.calendar.showDetail(\'${ev.title}\', \'${ev.detail}\')">
-                    <div class="event-date" style="min-width: 60px; font-weight: 800; color: var(--primary-color);">${ev.date.split('-')[2]}일</div>
-                    <span class="badge ${ev.type}" style="width: 24px; height: 24px; font-size: 13px;">${badgeMap[ev.type]}</span>
+                <div class="event-card" onclick="window.calendar.showDetail(\'${ev.title}\', \'${ev.detail}\')">
+                    <div class="event-date">${ev.date.split('-')[2]}일</div>
+                    <span class="badge ${ev.type}">${badgeMap[ev.type]}</span>
                     <div class="event-info">
-                        <div style="font-weight: 700;">${ev.title}</div>
-                        <div style="font-size: 12px; color: var(--text-muted);">${ev.detail}</div>
+                        <div class="event-title">${ev.title}</div>
+                        <div class="event-detail">${ev.detail}</div>
                     </div>
                 </div>
             `;
@@ -207,15 +215,15 @@ class CalendarManager {
 
     showDetail(title, detail) {
         document.querySelector('#modal-title').textContent = title;
-        document.querySelector('#modal-content').innerHTML = \`
+        document.querySelector('#modal-content').innerHTML = `
             <div style="padding: 10px 0;">
                 <p style="color: var(--text-muted); margin-bottom: 8px;">상세 내용:</p>
-                <p style="font-size: 1.1rem; font-weight: 600;">\${detail}</p>
+                <p style="font-size: 1.1rem; font-weight: 600;">${detail}</p>
             </div>
             <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
                 <button class="primary-btn" style="width: 100%;" onclick="window.calendar.toggleModal(false)">확인</button>
             </div>
-        \`;
+        `;
         this.toggleModal(true);
     }
 
