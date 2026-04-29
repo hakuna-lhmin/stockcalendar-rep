@@ -1,219 +1,235 @@
+// Expanded Sample Data with more details and types
+const eventsData = [
+    { date: '2024-07-01', type: 'ipo', country: 'korea', title: '에이비씨상사', detail: '공모가: 15,000원 / 주관사: 신한투자증권' },
+    { date: '2024-07-01', type: 'holiday', country: 'usa', title: '미국 휴장', detail: '독립기념일 대체 휴무' },
+    { date: '2024-07-02', type: 'dividend', country: 'korea', title: '삼성전자 배당', detail: '분기 배당금 지급 예정' },
+    { date: '2024-07-04', type: 'economic', country: 'usa', title: '비농업 고용지수', detail: '예상치: 200K / 이전: 220K' },
+    { date: '2024-07-10', type: 'earnings', country: 'usa', title: '델타항공 실적', detail: '개장 전 발표 예정' },
+    { date: '2024-07-15', type: 'rights', country: 'korea', title: '한국테크 유상증자', detail: '신주배정기준일' },
+    { date: '2024-07-20', type: 'ipo', country: 'korea', title: '지에스리테일 신규상장', detail: '코스피 시장 상장' },
+    { date: '2024-07-25', type: 'economic', country: 'korea', title: 'GDP 성장률 발표', detail: '2분기 속보치 발표' },
+];
 
-// Sample Data
-const events = {
-    '2024-07-01': [
-        { type: 'holiday', country: 'usa', title: '미국 독립기념일' },
-        { type: 'economic-indicator', country: 'korea', title: '한국 소비자물가지수' },
-    ],
-    '2024-07-15': [
-        { type: 'earnings-report', country: 'usa', title: 'A사 2분기 실적발표' },
-    ],
-    '2024-07-20': [
-        { type: 'economic-meeting', country: 'korea', title: '한국은행 금융통화위원회' },
-    ]
+const badgeMap = {
+    ipo: '공',
+    dividend: '배',
+    earnings: '실',
+    economic: '경',
+    rights: '증',
+    holiday: '휴'
 };
 
-class StockCalendar extends HTMLElement {
+class CalendarManager {
     constructor() {
-        super();
-        this.attachShadow({ mode: 'open' });
-        this.currentDate = new Date();
+        this.currentDate = new Date(2024, 6, 1); // Fixed to July 2024 for demo consistency
+        this.currentView = 'monthly';
+        this.init();
     }
 
-    static get observedAttributes() {
-        return ['view'];
-    }
-
-    attributeChangedCallback() {
+    init() {
+        this.bindEvents();
         this.render();
     }
 
-    connectedCallback() {
+    bindEvents() {
+        document.querySelector('#btn-monthly').onclick = () => this.switchView('monthly');
+        document.querySelector('#btn-weekly').onclick = () => this.switchView('weekly');
+        document.querySelector('#btn-list').onclick = () => this.switchView('list');
+
+        document.querySelector('#prev-period').onclick = () => this.movePeriod(-1);
+        document.querySelector('#next-period').onclick = () => this.movePeriod(1);
+        document.querySelector('#today-btn').onclick = () => {
+            this.currentDate = new Date();
+            this.render();
+        };
+
+        document.querySelector('#apply-filters').onclick = () => this.render();
+        
+        // Modal events
+        document.querySelector('#close-modal').onclick = () => this.toggleModal(false);
+        document.querySelector('#modal-backdrop').onclick = () => this.toggleModal(false);
+    }
+
+    switchView(view) {
+        this.currentView = view;
+        document.querySelectorAll('.view-controls button').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`#btn-${view}`).classList.add('active');
         this.render();
+    }
+
+    movePeriod(direction) {
+        if (this.currentView === 'monthly' || this.currentView === 'list') {
+            this.currentDate.setMonth(this.currentDate.getMonth() + direction);
+        } else {
+            this.currentDate.setDate(this.currentDate.getDate() + (direction * 7));
+        }
+        this.render();
+    }
+
+    getFilteredEvents() {
+        const countryEl = document.querySelector('input[name="country"]:checked');
+        if (!countryEl) return [];
+        const country = countryEl.value;
+        const types = Array.from(document.querySelectorAll('input[name="event-type"]:checked')).map(el => el.value);
+        
+        return eventsData.filter(ev => {
+            const isCountryMatch = ev.country === country;
+            const isTypeMatch = types.includes(ev.type);
+            return isCountryMatch && isTypeMatch;
+        });
     }
 
     render() {
-        const view = this.getAttribute('view') || 'monthly';
-        this.shadowRoot.innerHTML = `
-            <link rel="stylesheet" href="style.css">
-            <div id="calendar-container"></div>
-        `;
-        if (view === 'monthly') {
-            this.renderMonthlyCalendar();
+        const container = document.querySelector('#calendar-container');
+        const title = document.querySelector('#view-title');
+        
+        if (this.currentView === 'monthly') {
+            title.textContent = `${this.currentDate.getFullYear()}년 ${this.currentDate.getMonth() + 1}월`;
+            this.renderMonthly(container);
+        } else if (this.currentView === 'weekly') {
+            const start = this.getWeekStart(this.currentDate);
+            const end = new Date(start);
+            end.setDate(end.getDate() + 6);
+            title.textContent = `${start.getMonth()+1}/${start.getDate()} ~ ${end.getMonth()+1}/${end.getDate()}`;
+            this.renderWeekly(container);
         } else {
-            this.renderWeeklyCalendar();
+            title.textContent = `${this.currentDate.getFullYear()}년 ${this.currentDate.getMonth() + 1}월 일정`;
+            this.renderList(container);
         }
     }
 
-    renderMonthlyCalendar() {
-        const container = this.shadowRoot.querySelector('#calendar-container');
-        const monthYear = this.currentDate.toLocaleString('ko-KR', { month: 'long', year: 'numeric' });
-        const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-
-        let calendarHtml = `<table class="calendar-table"><thead><tr>`;
-        weekdays.forEach(day => {
-            calendarHtml += `<th>${day}</th>`;
-        });
-        calendarHtml += `</tr></thead><tbody><tr>`;
-
-        const daysInMonth = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 0).getDate();
-        const firstDayOfMonth = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1).getDay();
-
-        for (let i = 0; i < firstDayOfMonth; i++) {
-            calendarHtml += `<td></td>`;
-        }
-
-        let dayCounter = firstDayOfMonth;
-        for (let i = 1; i <= daysInMonth; i++) {
-            if (dayCounter % 7 === 0 && i !== 1) {
-                calendarHtml += `</tr><tr>`;
-            }
-            const dateStr = `${this.currentDate.getFullYear()}-${String(this.currentDate.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-            calendarHtml += `
-                <td class="calendar-day">
-                    <div class="calendar-day-header">${i}</div>
-                    ${this.getEventsForDate(dateStr)}
-                </td>`;
-            dayCounter++;
-        }
-
-        while (dayCounter % 7 !== 0) {
-            calendarHtml += `<td></td>`;
-            dayCounter++;
-        }
-
-        calendarHtml += `</tr></tbody></table>`;
-        container.innerHTML = calendarHtml;
+    renderMonthly(container) {
+        const year = this.currentDate.getFullYear();
+        const month = this.currentDate.getMonth();
+        const firstDay = new Date(year, month, 1).getDay();
+        const lastDate = new Date(year, month + 1, 0).getDate();
         
-        // Update title in parent document if it exists
-        const titleEl = document.querySelector('#monthly-view-title');
-        if (titleEl) titleEl.textContent = monthYear;
+        let html = '<table class="calendar-table"><thead><tr>';
+        ['일','월','화','수','목','금','토'].forEach(d => html += `<th>${d}</th>`);
+        html += '</tr></thead><tbody><tr>';
+
+        for (let i = 0; i < firstDay; i++) html += '<td></td>';
+
+        const filtered = this.getFilteredEvents();
+
+        for (let d = 1; d <= lastDate; d++) {
+            if ((d + firstDay - 1) % 7 === 0 && d !== 1) html += '</tr><tr>';
+            
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const dayEvents = filtered.filter(ev => ev.date === dateStr);
+            
+            html += `<td>
+                <div class="calendar-day-header">${d}</div>
+                <div class="day-events">
+                    ${dayEvents.map(ev => `
+                        <div class="event-item" onclick="window.calendar.showDetail(\'${ev.title}\', \'${ev.detail}\')">
+                            <span class="badge ${ev.type}">${badgeMap[ev.type]}</span>
+                            ${ev.title}
+                        </div>
+                    `).join('')}
+                </div>
+            </td>`;
+        }
+        
+        html += '</tr></tbody></table>';
+        container.innerHTML = html;
     }
-    
-    renderWeeklyCalendar() {
-        const container = this.shadowRoot.querySelector('#calendar-container');
-        const weekStart = new Date(this.currentDate);
-        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-        
-        const weekYear = this.currentDate.getFullYear();
-        const weekMonth = this.currentDate.toLocaleString('ko-KR', { month: 'long' });
-        const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
 
-        let calendarHtml = `<table class="calendar-table"><thead><tr>`;
-        weekdays.forEach(day => {
-            calendarHtml += `<th>${day}</th>`;
-        });
-        calendarHtml += `</tr></thead><tbody><tr>`;
+    renderWeekly(container) {
+        const start = this.getWeekStart(this.currentDate);
+        const filtered = this.getFilteredEvents();
+        
+        let html = '<table class="calendar-table"><thead><tr>';
+        ['일','월','화','수','목','금','토'].forEach(d => html += `<th>${d}</th>`);
+        html += '</tr></thead><tbody><tr>';
 
         for (let i = 0; i < 7; i++) {
-            const day = new Date(weekStart);
-            day.setDate(day.getDate() + i);
-            const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
-            calendarHtml += `
-                <td class="calendar-day">
-                    <div class="calendar-day-header">${day.getDate()}</div>
-                    ${this.getEventsForDate(dateStr)}
-                </td>`;
-        }
+            const current = new Date(start);
+            current.setDate(current.getDate() + i);
+            const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+            const dayEvents = filtered.filter(ev => ev.date === dateStr);
 
-        calendarHtml += `</tr></tbody></table>`;
-        container.innerHTML = calendarHtml;
-
-        // Update title in parent document
-        const titleEl = document.querySelector('#weekly-view-title');
-        if (titleEl) {
-            const weekEnd = new Date(weekStart);
-            weekEnd.setDate(weekEnd.getDate() + 6);
-            titleEl.textContent = `${weekStart.toLocaleDateString('ko-KR')} ~ ${weekEnd.toLocaleDateString('ko-KR')}`;
-        }
-    }
-
-
-    getEventsForDate(date) {
-        const eventsForDate = events[date] || [];
-        const countryEl = document.querySelector('input[name="country"]:checked');
-        if (!countryEl) return '';
-        const country = countryEl.value;
-        const eventTypes = Array.from(document.querySelectorAll('input[name="event-type"]:checked')).map(el => el.value);
-
-        return eventsForDate
-            .filter(event => event.country === country && eventTypes.includes(event.type))
-            .map(event => `
-                <div class="event ${event.type}">
-                    ${event.title}
-                    <button class="impact-analysis-btn" data-date="${date}" data-title="${event.title}">영향분석</button>
+            html += `<td>
+                <div class="calendar-day-header">${current.getDate()}</div>
+                <div class="day-events">
+                    ${dayEvents.map(ev => `
+                        <div class="event-item" onclick="window.calendar.showDetail(\'${ev.title}\', \'${ev.detail}\')">
+                            <span class="badge ${ev.type}">${badgeMap[ev.type]}</span>
+                            ${ev.title}
+                        </div>
+                    `).join('')}
                 </div>
-            `).join('');
-    }
-}
-
-
-customElements.define('stock-calendar', StockCalendar);
-
-document.addEventListener('DOMContentLoaded', () => {
-    const monthlyCalendar = document.createElement('stock-calendar');
-    monthlyCalendar.setAttribute('view', 'monthly');
-    document.querySelector('#monthly-calendar').appendChild(monthlyCalendar);
-
-    const weeklyCalendar = document.createElement('stock-calendar');
-    weeklyCalendar.setAttribute('view', 'weekly');
-    document.querySelector('#weekly-calendar').appendChild(weeklyCalendar);
-
-    document.querySelector('#apply-filters').addEventListener('click', () => {
-        monthlyCalendar.render(); 
-        weeklyCalendar.render();
-    });
-    
-    document.querySelector('#prev-month').addEventListener('click', () => {
-        monthlyCalendar.currentDate.setMonth(monthlyCalendar.currentDate.getMonth() - 1);
-        monthlyCalendar.render();
-    });
-
-    document.querySelector('#next-month').addEventListener('click', () => {
-        monthlyCalendar.currentDate.setMonth(monthlyCalendar.currentDate.getMonth() + 1);
-        monthlyCalendar.render();
-    });
-    
-    document.querySelector('#prev-week').addEventListener('click', () => {
-        weeklyCalendar.currentDate.setDate(weeklyCalendar.currentDate.getDate() - 7);
-        weeklyCalendar.render();
-    });
-
-    document.querySelector('#next-week').addEventListener('click', () => {
-        weeklyCalendar.currentDate.setDate(weeklyCalendar.currentDate.getDate() + 7);
-        weeklyCalendar.render();
-    });
-
-
-    document.body.addEventListener('click', event => {
-        if (event.target.classList.contains('impact-analysis-btn')) {
-            const date = event.target.dataset.date;
-            const title = event.target.dataset.title;
-            openModal(date, title);
+            </td>`;
         }
-    });
-    
-    document.querySelector('#close-modal').addEventListener('click', closeModal);
-    document.querySelector('#modal-backdrop').addEventListener('click', closeModal);
 
-});
-
-
-function openModal(date, title) {
-    const eventData = (events[date] || []).find(e => e.title === title);
-
-    if (eventData) {
-        // These would be more detailed in a real app
-        document.querySelector('#bullish-factors').textContent = `${title} 발표 시 시장 예상치를 상회하면 주가 상승 요인으로 작용할 수 있습니다.`;
-        document.querySelector('#bearish-factors').textContent = `${title} 발표 시 시장 예상치를 하회하면 주가 하락 요인으로 작용할 수 있습니다.`;
+        html += '</tr></tbody></table>';
+        container.innerHTML = html;
     }
 
-    document.querySelector('#impact-analysis-modal').classList.remove('hidden');
-    document.querySelector('#modal-backdrop').classList.remove('hidden');
+    renderList(container) {
+        const filtered = this.getFilteredEvents();
+        const year = this.currentDate.getFullYear();
+        const month = this.currentDate.getMonth();
+        
+        const monthEvents = filtered.filter(ev => {
+            const evDate = new Date(ev.date);
+            return evDate.getFullYear() === year && evDate.getMonth() === month;
+        }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        if (monthEvents.length === 0) {
+            container.innerHTML = '<div style="padding: 40px; text-align: center; color: #94a3b8;">해당 월에 일정이 없습니다.</div>';
+            return;
+        }
+
+        let html = '<div class="list-view" style="display: flex; flex-direction: column; gap: 12px;">';
+        monthEvents.forEach(ev => {
+            html += `
+                <div class="event-card" style="padding: 16px; border: 1px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 16px; cursor: pointer;" onclick="window.calendar.showDetail(\'${ev.title}\', \'${ev.detail}\')">
+                    <div class="event-date" style="min-width: 60px; font-weight: 800; color: var(--primary-color);">${ev.date.split('-')[2]}일</div>
+                    <span class="badge ${ev.type}" style="width: 24px; height: 24px; font-size: 13px;">${badgeMap[ev.type]}</span>
+                    <div class="event-info">
+                        <div style="font-weight: 700;">${ev.title}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">${ev.detail}</div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    getWeekStart(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day;
+        return new Date(d.setDate(diff));
+    }
+
+    showDetail(title, detail) {
+        document.querySelector('#modal-title').textContent = title;
+        document.querySelector('#modal-content').innerHTML = \`
+            <div style="padding: 10px 0;">
+                <p style="color: var(--text-muted); margin-bottom: 8px;">상세 내용:</p>
+                <p style="font-size: 1.1rem; font-weight: 600;">\${detail}</p>
+            </div>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                <button class="primary-btn" style="width: 100%;" onclick="window.calendar.toggleModal(false)">확인</button>
+            </div>
+        \`;
+        this.toggleModal(true);
+    }
+
+    toggleModal(show) {
+        const modal = document.querySelector('#event-modal');
+        const backdrop = document.querySelector('#modal-backdrop');
+        if (show) {
+            modal.classList.remove('hidden');
+            backdrop.classList.remove('hidden');
+        } else {
+            modal.classList.add('hidden');
+            backdrop.classList.add('hidden');
+        }
+    }
 }
 
-function closeModal() {
-    document.querySelector('#impact-analysis-modal').classList.add('hidden');
-    document.querySelector('#modal-backdrop').classList.add('hidden');
-}
-
+window.calendar = new CalendarManager();

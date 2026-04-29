@@ -1,72 +1,99 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>증시 캘린더</title>
+    <title>Stock Calendar Pro</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <header>
-        <h1>증시 캘린더</h1>
-    </header>
-    <main>
-        <div class="filter-container">
-            <div class="country-filter">
-                <label><input type="radio" name="country" value="korea" checked> 한국</label>
-                <label><input type="radio" name="country" value="usa"> 미국</label>
+    <div class="app-container">
+        <header class="main-header">
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                <h1>STOCK CALENDAR</h1>
             </div>
-            <div class="event-type-filter">
-                <label><input type="checkbox" name="event-type" value="holiday" checked> 휴장일</label>
-                <label><input type="checkbox" name="event-type" value="economic-indicator" checked> 경제 지표</label>
-                <label><input type="checkbox" name="event-type" value="economic-meeting"> 경제 회의</label>
-                <label><input type="checkbox" name="event-type" value="earnings-report"> 실적</label>
-                <label><input type="checkbox" name="event-type" value="futures-options-expiration"> 선물옵션 만기일</label>
-                <label><input type="checkbox" name="event-type" value="seminar-exhibition"> 주가 관련 세미나 및 전시회</label>
-                <label><input type="checkbox" name="event-type" value="other"> 기타</label>
+            <div class="view-controls">
+                <button id="btn-monthly" class="active">월간</button>
+                <button id="btn-weekly">주간</button>
+                <button id="btn-list">목록</button>
             </div>
-            <button id="apply-filters">적용</button>
-        </div>
+        </header>
 
-        <div class="calendar-views">
-            <section id="monthly-view">
-                <h2>월간 캘린더</h2>
-                <div class="calendar-header">
-                    <button id="prev-month">&lt;</button>
-                    <h3 id="monthly-view-title"></h3>
-                    <button id="next-month">&gt;</button>
+        <aside class="filter-sidebar">
+            <section class="filter-group">
+                <h3><i class="fas fa-globe"></i> 시장 선택</h3>
+                <div class="radio-group">
+                    <label class="custom-radio">
+                        <input type="radio" name="country" value="korea" checked>
+                        <span class="radio-mark"></span> 국내 증시
+                    </label>
+                    <label class="custom-radio">
+                        <input type="radio" name="country" value="usa">
+                        <span class="radio-mark"></span> 미국 증시
+                    </label>
                 </div>
-                <div id="monthly-calendar" class="calendar"></div>
             </section>
 
-            <section id="weekly-view">
-                <h2>주간 캘린더</h2>
-                 <div class="calendar-header">
-                    <button id="prev-week">&lt;</button>
-                    <h3 id="weekly-view-title"></h3>
-                    <button id="next-week">&gt;</button>
+            <section class="filter-group">
+                <h3><i class="fas fa-tags"></i> 일정 구분</h3>
+                <div class="checkbox-grid">
+                    <label class="custom-checkbox">
+                        <input type="checkbox" name="event-type" value="ipo" checked>
+                        <span class="check-mark"></span> 공모주
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" name="event-type" value="dividend" checked>
+                        <span class="check-mark"></span> 배당
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" name="event-type" value="earnings" checked>
+                        <span class="check-mark"></span> 실적
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" name="event-type" value="economic" checked>
+                        <span class="check-mark"></span> 경제지표
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" name="event-type" value="rights" checked>
+                        <span class="check-mark"></span> 증자/권리
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" name="event-type" value="holiday">
+                        <span class="check-mark"></span> 휴장일
+                    </label>
                 </div>
-                <div id="weekly-calendar" class="calendar"></div>
             </section>
-        </div>
-    </main>
+            
+            <button id="apply-filters" class="primary-btn">필터 적용</button>
+        </aside>
 
+        <main class="content-area">
+            <div class="calendar-wrapper">
+                <div class="calendar-nav">
+                    <button id="prev-period" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+                    <h2 id="view-title">2024년 7월</h2>
+                    <button id="next-period" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+                    <button id="today-btn" class="secondary-btn">오늘</button>
+                </div>
+                
+                <div id="calendar-container">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Details Modal -->
     <div id="modal-backdrop" class="hidden"></div>
-    <div id="impact-analysis-modal" class="modal hidden">
+    <div id="event-modal" class="modal hidden">
         <div class="modal-header">
-            <h2>영향 분석</h2>
+            <h2 id="modal-title">상세 일정</h2>
             <button id="close-modal">&times;</button>
         </div>
         <div class="modal-body">
-            <div class="modal-content-item">
-                <h4>상승 요인</h4>
-                <p id="bullish-factors"></p>
-            </div>
-            <div class="modal-content-item">
-                <h4>하락 요인</h4>
-                <p id="bearish-factors"></p>
-            </div>
+            <div id="modal-content"></div>
         </div>
     </div>
 
