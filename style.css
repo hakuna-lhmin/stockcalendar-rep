@@ -174,7 +174,22 @@ input:checked + .check-mark::after {
     font-weight: 700;
     cursor: pointer;
     margin-top: auto;
-    transition: opacity 0.2s;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.primary-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.primary-btn:disabled {
+    background: var(--text-muted);
+    cursor: not-allowed;
+    transform: none;
 }
 
 /* Content Area */
