@@ -76,6 +76,7 @@ class CalendarManager {
     }
 
     init() {
+        this.initTheme();
         this.bindEvents();
         this.render();
     }
@@ -84,6 +85,7 @@ class CalendarManager {
         document.querySelector('#btn-monthly').onclick = () => this.switchView('monthly');
         document.querySelector('#btn-weekly').onclick = () => this.switchView('weekly');
         document.querySelector('#btn-list').onclick = () => this.switchView('list');
+        document.querySelector('#theme-toggle').onclick = () => this.toggleTheme();
 
         document.querySelector('#prev-period').onclick = () => this.movePeriod(-1);
         document.querySelector('#next-period').onclick = () => this.movePeriod(1);
@@ -99,6 +101,28 @@ class CalendarManager {
         document.querySelector('#close-modal').onclick = () => this.toggleModal(false);
         document.querySelector('#modal-backdrop').onclick = () => this.toggleModal(false);
     }
+
+    initTheme() {
+        const savedTheme = localStorage.getItem('stockcalendar-theme') || 'light';
+        this.applyTheme(savedTheme);
+    }
+
+    toggleTheme() {
+        const currentTheme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+        const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        this.applyTheme(nextTheme);
+        localStorage.setItem('stockcalendar-theme', nextTheme);
+    }
+
+    applyTheme(theme) {
+        const isDark = theme === 'dark';
+        document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+
+        const icon = document.querySelector('#theme-toggle i');
+        if (icon) {
+            icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        }
+    }
 async handleAiSearch() {
     if (this.isSearching) return;
     console.log('Gemini AI Search triggered');
@@ -109,7 +133,7 @@ async handleAiSearch() {
     try {
         this.isSearching = true;
         btn.disabled = true;
-        btn.innerHTML = \`<i class="fas fa-spinner fa-spin"></i> Gemini AI 검색 중...\`;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Gemini AI 검색 중...`;
 
         // Simulate AI Search Delay
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -117,7 +141,7 @@ async handleAiSearch() {
         const addedCount = this.mergeAiData();
 
         this.render();
-        this.showToast(\`Gemini AI: \${addedCount}개의 새로운 일정을 찾았습니다.\`);
+        this.showToast(`Gemini AI: ${addedCount}개의 새로운 일정을 찾았습니다.`);
     } finally {
         this.isSearching = false;
         btn.disabled = false;
@@ -163,7 +187,7 @@ async handleAiSearch() {
         const toast = document.createElement('div');
         toast.className = 'toast';
         const icon = type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
-        toast.innerHTML = \`<i class="fas \${icon}"></i> \${message}\`;
+        toast.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
         
         container.appendChild(toast);
         
@@ -176,7 +200,7 @@ async handleAiSearch() {
     switchView(view) {
         this.currentView = view;
         document.querySelectorAll('.view-controls button').forEach(btn => btn.classList.remove('active'));
-        document.querySelector(\`#btn-\${view}\`).classList.add('active');
+        document.querySelector(`#btn-${view}`).classList.add('active');
         this.render();
     }
 
@@ -205,19 +229,19 @@ async handleAiSearch() {
     render() {
         const container = document.querySelector('#calendar-container');
         const title = document.querySelector('#view-title');
-        container.className = \`calendar-view \${this.currentView}-view\`;
+        container.className = `calendar-view ${this.currentView}-view`;
         
         if (this.currentView === 'monthly') {
-            title.textContent = \`\${this.currentDate.getFullYear()}년 \${this.currentDate.getMonth() + 1}월\`;
+            title.textContent = `${this.currentDate.getFullYear()}년 ${this.currentDate.getMonth() + 1}월`;
             this.renderMonthly(container);
         } else if (this.currentView === 'weekly') {
             const start = this.getWeekStart(this.currentDate);
             const end = new Date(start);
             end.setDate(end.getDate() + 6);
-            title.textContent = \`\${start.getFullYear()}년 \${start.getMonth() + 1}/\${start.getDate()} ~ \${end.getMonth() + 1}/\${end.getDate()}\`;
+            title.textContent = `${start.getFullYear()}년 ${start.getMonth() + 1}/${start.getDate()} ~ ${end.getMonth() + 1}/${end.getDate()}`;
             this.renderWeekly(container);
         } else {
-            title.textContent = \`\${this.currentDate.getFullYear()}년 \${this.currentDate.getMonth() + 1}월 일정\`;
+            title.textContent = `${this.currentDate.getFullYear()}년 ${this.currentDate.getMonth() + 1}월 일정`;
             this.renderList(container);
         }
     }
@@ -229,7 +253,7 @@ async handleAiSearch() {
         const lastDate = new Date(year, month + 1, 0).getDate();
         
         let html = '<table class="calendar-table"><thead><tr>';
-        ['일','월','화','수','목','금','토'].forEach(d => html += \`<th>\${d}</th>\`);
+        ['일','월','화','수','목','금','토'].forEach(d => html += `<th>${d}</th>`);
         html += '</tr></thead><tbody><tr>';
 
         for (let i = 0; i < firstDay; i++) html += '<td></td>';
@@ -243,20 +267,20 @@ async handleAiSearch() {
                             month === this.today.getMonth() && 
                             year === this.today.getFullYear();
             
-            const dateStr = \`\${year}-\${String(month + 1).padStart(2, '0')}-\${String(d).padStart(2, '0')}\`;
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             const dayEvents = filtered.filter(ev => ev.date === dateStr);
             
-            html += \`<td class="\${isToday ? 'today' : ''}">
-                <div class="calendar-day-header">\${d}</div>
+            html += `<td class="${isToday ? 'today' : ''}">
+                <div class="calendar-day-header">${d}</div>
                 <div class="day-events">
-                    \${dayEvents.map(ev => \`
-                        <div class="event-item" onclick="window.calendar.showDetail(\\\'\${ev.title}\\\', \\\'\${ev.detail}\\\')">
-                            <span class="badge \${ev.type}">\${badgeMap[ev.type]}</span>
-                            \${ev.title}
+                    ${dayEvents.map(ev => `
+                        <div class="event-item" onclick="window.calendar.showDetail('${ev.title}', '${ev.detail}')">
+                            <span class="badge ${ev.type}">${badgeMap[ev.type]}</span>
+                            ${ev.title}
                         </div>
-                    \`).join('')}
+                    `).join('')}
                 </div>
-            </td>\`;
+            </td>`;
         }
         
         const usedCells = firstDay + lastDate;
@@ -272,7 +296,7 @@ async handleAiSearch() {
         const filtered = this.getFilteredEvents();
         
         let html = '<table class="calendar-table"><thead><tr>';
-        ['일','월','화','수','목','금','토'].forEach(d => html += \`<th>\${d}</th>\`);
+        ['일','월','화','수','목','금','토'].forEach(d => html += `<th>${d}</th>`);
         html += '</tr></thead><tbody><tr>';
 
         for (let i = 0; i < 7; i++) {
@@ -283,23 +307,23 @@ async handleAiSearch() {
                             current.getMonth() === this.today.getMonth() && 
                             current.getFullYear() === this.today.getFullYear();
 
-            const dateStr = \`\${current.getFullYear()}-\${String(current.getMonth() + 1).padStart(2, '0')}-\${String(current.getDate()).padStart(2, '0')}\`;
+            const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
             const dayEvents = filtered.filter(ev => ev.date === dateStr);
 
-            html += \`<td class="\${isToday ? 'today' : ''}">
+            html += `<td class="${isToday ? 'today' : ''}">
                 <div class="calendar-day-header">
-                    <span>\${current.getDate()}</span>
-                    <small>\${current.getMonth() + 1}월</small>
+                    <span>${current.getDate()}</span>
+                    <small>${current.getMonth() + 1}월</small>
                 </div>
                 <div class="day-events">
-                    \${dayEvents.map(ev => \`
-                        <div class="event-item" onclick="window.calendar.showDetail(\\\'\${ev.title}\\\', \\\'\${ev.detail}\\\')">
-                            <span class="badge \${ev.type}">\${badgeMap[ev.type]}</span>
-                            \${ev.title}
+                    ${dayEvents.map(ev => `
+                        <div class="event-item" onclick="window.calendar.showDetail('${ev.title}', '${ev.detail}')">
+                            <span class="badge ${ev.type}">${badgeMap[ev.type]}</span>
+                            ${ev.title}
                         </div>
-                    \`).join('')}
+                    `).join('')}
                 </div>
-            </td>\`;
+            </td>`;
         }
 
         html += '</tr></tbody></table>';
@@ -328,17 +352,17 @@ async handleAiSearch() {
                             evDate.getMonth() === this.today.getMonth() && 
                             evDate.getFullYear() === this.today.getFullYear();
 
-            html += \`
-                <div class="event-card \${isToday ? 'today-highlight' : ''}" onclick="window.calendar.showDetail(\\\'\${ev.title}\\\', \\\'\${ev.detail}\\\')">
-                    <div class="event-date">\${ev.date.split('-')[2]}일</div>
-                    <span class="badge \${ev.type}">\${badgeMap[ev.type]}</span>
+            html += `
+                <div class="event-card ${isToday ? 'today-highlight' : ''}" onclick="window.calendar.showDetail('${ev.title}', '${ev.detail}')">
+                    <div class="event-date">${ev.date.split('-')[2]}일</div>
+                    <span class="badge ${ev.type}">${badgeMap[ev.type]}</span>
                     <div class="event-info">
-                        <div class="event-title">\${ev.title}</div>
-                        <div class="event-detail">\${ev.detail}</div>
+                        <div class="event-title">${ev.title}</div>
+                        <div class="event-detail">${ev.detail}</div>
                     </div>
-                    \${isToday ? '<div class="today-label">오늘</div>' : ''}
+                    ${isToday ? '<div class="today-label">오늘</div>' : ''}
                 </div>
-            \`;
+            `;
         });
         html += '</div>';
         container.innerHTML = html;
@@ -353,15 +377,15 @@ async handleAiSearch() {
 
     showDetail(title, detail) {
         document.querySelector('#modal-title').textContent = title;
-        document.querySelector('#modal-content').innerHTML = \`
+        document.querySelector('#modal-content').innerHTML = `
             <div style="padding: 10px 0;">
                 <p style="color: var(--text-muted); margin-bottom: 8px;">상세 내용:</p>
-                <p style="font-size: 1.1rem; font-weight: 600;">\${detail}</p>
+                <p style="font-size: 1.1rem; font-weight: 600;">${detail}</p>
             </div>
             <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
                 <button class="primary-btn" style="width: 100%;" onclick="window.calendar.toggleModal(false)">확인</button>
             </div>
-        \`;
+        `;
         this.toggleModal(true);
     }
 

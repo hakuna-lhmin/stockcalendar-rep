@@ -1,16 +1,29 @@
 :root {
-    --primary-color: #3b82f6; /* Modern Blue */
-    --secondary-color: #f43f5e; /* Rose */
-    --success-color: #10b981; /* Emerald */
-    --warning-color: #f59e0b; /* Amber */
-    --info-color: #06b6d4; /* Cyan */
+    --primary-color: #3b82f6;
+    --secondary-color: #f43f5e;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --info-color: #06b6d4;
     --bg-color: #f8fafc;
     --sidebar-bg: #ffffff;
+    --card-bg: #ffffff;
     --text-main: #1e293b;
     --text-muted: #64748b;
     --border-color: #e2e8f0;
     --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --radius: 12px;
+    --control-bg: #f1f5f9;
+}
+
+[data-theme="dark"] {
+    --bg-color: #0f172a;
+    --sidebar-bg: #1e293b;
+    --card-bg: #1e293b;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-color: #334155;
+    --card-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+    --control-bg: #334155;
 }
 
 * {
@@ -24,6 +37,7 @@ body {
     background-color: var(--bg-color);
     color: var(--text-main);
     line-height: 1.5;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .app-container {
@@ -39,7 +53,7 @@ body {
 /* Header */
 .main-header {
     grid-area: header;
-    background: #fff;
+    background: var(--sidebar-bg);
     border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
@@ -63,7 +77,7 @@ body {
 
 .view-controls {
     display: flex;
-    background: #f1f5f9;
+    background: var(--control-bg);
     padding: 4px;
     border-radius: 8px;
 }
@@ -81,7 +95,7 @@ body {
 }
 
 .view-controls button.active {
-    background: #fff;
+    background: var(--card-bg);
     color: var(--primary-color);
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
@@ -193,7 +207,7 @@ input:checked + .check-mark::after {
 }
 
 .calendar-table td.today {
-    background: #eff6ff;
+    background: color-mix(in srgb, var(--primary-color) 12%, var(--card-bg));
     position: relative;
 }
 
@@ -213,7 +227,7 @@ input:checked + .check-mark::after {
 
 .event-card.today-highlight {
     border-left: 4px solid var(--primary-color);
-    background: #eff6ff;
+    background: color-mix(in srgb, var(--primary-color) 12%, var(--card-bg));
     position: relative;
 }
 
@@ -239,7 +253,7 @@ input:checked + .check-mark::after {
 }
 
 .calendar-wrapper {
-    background: #fff;
+    background: var(--card-bg);
     border-radius: var(--radius);
     padding: 24px;
     box-shadow: var(--card-shadow);
@@ -257,7 +271,7 @@ input:checked + .check-mark::after {
     height: 36px;
     border-radius: 50%;
     border: 1px solid var(--border-color);
-    background: #fff;
+    background: var(--card-bg);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -273,7 +287,8 @@ input:checked + .check-mark::after {
 }
 
 .secondary-btn {
-    background: #f1f5f9;
+    background: var(--control-bg);
+    color: var(--text-main);
     border: none;
     padding: 8px 16px;
     border-radius: 6px;
@@ -306,7 +321,7 @@ input:checked + .check-mark::after {
 }
 
 .calendar-table td.empty-day {
-    background: #f8fafc;
+    background: var(--control-bg);
 }
 
 .calendar-day-header {
@@ -414,7 +429,7 @@ input:checked + .check-mark::after {
     color: var(--text-main);
 }
 
-.event-item:hover { background: #f1f5f9; }
+.event-item:hover { background: var(--control-bg); }
 
 .badge.ipo { background: var(--success-color); }
 .badge.dividend { background: var(--secondary-color); }
@@ -429,7 +444,7 @@ input:checked + .check-mark::after {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: #fff;
+    background: var(--card-bg);
     padding: 32px;
     border-radius: 16px;
     z-index: 1001;
