@@ -1,5 +1,5 @@
 // Expanded Sample Data with more details and types
-let eventsData = [
+const initialEventsData = [
     { date: '2024-07-01', type: 'ipo', country: 'korea', title: '에이비씨상사', detail: '공모가: 15,000원 / 주관사: 신한투자증권' },
     { date: '2024-07-01', type: 'holiday', country: 'usa', title: '미국 휴장', detail: '독립기념일 대체 휴무' },
     { date: '2024-07-02', type: 'dividend', country: 'korea', title: '삼성전자 배당', detail: '분기 배당금 지급 예정' },
@@ -9,6 +9,8 @@ let eventsData = [
     { date: '2024-07-20', type: 'ipo', country: 'korea', title: '지에스리테일 신규상장', detail: '코스피 시장 상장' },
     { date: '2024-07-25', type: 'economic', country: 'korea', title: 'GDP 성장률 발표', detail: '2분기 속보치 발표' },
 ];
+
+let eventsData = [...initialEventsData];
 
 // Real-world 2026 Data for Gemini AI Search Simulation
 const aiSearchData = [
@@ -91,38 +93,38 @@ class CalendarManager {
         };
 
         document.querySelector('#apply-filters').onclick = () => this.handleAiSearch();
+        document.querySelector('#reset-filters').onclick = () => this.resetFilters();
         
         // Modal events
         document.querySelector('#close-modal').onclick = () => this.toggleModal(false);
         document.querySelector('#modal-backdrop').onclick = () => this.toggleModal(false);
     }
+async handleAiSearch() {
+    if (this.isSearching) return;
+    console.log('Gemini AI Search triggered');
 
-    async handleAiSearch() {
-        if (this.isSearching) return;
-        
-        const btn = document.querySelector('#apply-filters');
-        const originalText = btn.innerHTML;
-        
-        try {
-            this.isSearching = true;
-            btn.disabled = true;
-            btn.innerHTML = \`<i class="fas fa-spinner fa-spin"></i> Gemini AI 검색 중...\`;
-            
-            // Simulate AI Search Delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            // In a real app, this would be an API call to Gemini
-            // For this demo, we merge the 2026 data based on filters
-            this.mergeAiData();
-            
-            this.render();
-            console.log('Gemini AI: 2026년 일정 검색 및 필터 적용 완료');
-        } finally {
-            this.isSearching = false;
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        }
+    const btn = document.querySelector('#apply-filters');
+    const originalText = btn.innerHTML;
+
+    try {
+        this.isSearching = true;
+        btn.disabled = true;
+        btn.innerHTML = \`<i class="fas fa-spinner fa-spin"></i> Gemini AI 검색 중...\`;
+
+        // Simulate AI Search Delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        const addedCount = this.mergeAiData();
+
+        this.render();
+        this.showToast(\`Gemini AI: \${addedCount}개의 새로운 일정을 찾았습니다.\`);
+    } finally {
+        this.isSearching = false;
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     }
+}
+
 
     mergeAiData() {
         const country = document.querySelector('input[name="country"]:checked').value;
@@ -133,13 +135,42 @@ class CalendarManager {
             ev.country === country && types.includes(ev.type)
         );
 
-        // Add to eventsData if not already exists (primitive check)
+        let addedCount = 0;
         matchedAiEvents.forEach(aiEv => {
             const exists = eventsData.some(ev => ev.date === aiEv.date && ev.title === aiEv.title);
             if (!exists) {
                 eventsData.push(aiEv);
+                addedCount++;
             }
         });
+        return addedCount;
+    }
+
+    resetFilters() {
+        // Reset Checkboxes
+        document.querySelectorAll('input[name="event-type"]').forEach(cb => {
+            cb.checked = true; // Default all checked
+        });
+        
+        // Reset to initial data
+        eventsData = [...initialEventsData];
+        this.render();
+        this.showToast('일정 필터가 초기화되었습니다.', 'info');
+    }
+
+    showToast(message, type = 'success') {
+        const container = document.querySelector('#toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+        toast.innerHTML = \`<i class="fas \${icon}"></i> \${message}\`;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.add('fade-out');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 
     switchView(view) {

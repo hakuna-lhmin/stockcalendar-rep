@@ -1,0 +1,13 @@
+# IDE and Tool Folders
+.vscode/
+.idx/
+.idea/
+.DS_Store
+node_modules/
+dist/
+build/
+.env
+
+# System Files
+Thumbs.db
+desktop.ini
