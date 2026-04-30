@@ -66,8 +66,8 @@ const badgeMap = {
 
 class CalendarManager {
     constructor() {
-        // Set initial date to May 2026 to see the searched content
-        this.currentDate = new Date(2026, 4, 1); 
+        this.today = new Date();
+        this.currentDate = new Date(); 
         this.currentView = 'monthly';
         this.isSearching = false;
         this.init();
@@ -208,10 +208,14 @@ class CalendarManager {
         for (let d = 1; d <= lastDate; d++) {
             if ((d + firstDay - 1) % 7 === 0 && d !== 1) html += '</tr><tr>';
             
+            const isToday = d === this.today.getDate() && 
+                            month === this.today.getMonth() && 
+                            year === this.today.getFullYear();
+            
             const dateStr = \`\${year}-\${String(month + 1).padStart(2, '0')}-\${String(d).padStart(2, '0')}\`;
             const dayEvents = filtered.filter(ev => ev.date === dateStr);
             
-            html += \`<td>
+            html += \`<td class="\${isToday ? 'today' : ''}">
                 <div class="calendar-day-header">\${d}</div>
                 <div class="day-events">
                     \${dayEvents.map(ev => \`
@@ -243,10 +247,15 @@ class CalendarManager {
         for (let i = 0; i < 7; i++) {
             const current = new Date(start);
             current.setDate(current.getDate() + i);
+            
+            const isToday = current.getDate() === this.today.getDate() && 
+                            current.getMonth() === this.today.getMonth() && 
+                            current.getFullYear() === this.today.getFullYear();
+
             const dateStr = \`\${current.getFullYear()}-\${String(current.getMonth() + 1).padStart(2, '0')}-\${String(current.getDate()).padStart(2, '0')}\`;
             const dayEvents = filtered.filter(ev => ev.date === dateStr);
 
-            html += \`<td>
+            html += \`<td class="\${isToday ? 'today' : ''}">
                 <div class="calendar-day-header">
                     <span>\${current.getDate()}</span>
                     <small>\${current.getMonth() + 1}월</small>
@@ -283,14 +292,20 @@ class CalendarManager {
 
         let html = '<div class="event-list">';
         monthEvents.forEach(ev => {
+            const evDate = new Date(ev.date);
+            const isToday = evDate.getDate() === this.today.getDate() && 
+                            evDate.getMonth() === this.today.getMonth() && 
+                            evDate.getFullYear() === this.today.getFullYear();
+
             html += \`
-                <div class="event-card" onclick="window.calendar.showDetail(\\\'\${ev.title}\\\', \\\'\${ev.detail}\\\')">
+                <div class="event-card \${isToday ? 'today-highlight' : ''}" onclick="window.calendar.showDetail(\\\'\${ev.title}\\\', \\\'\${ev.detail}\\\')">
                     <div class="event-date">\${ev.date.split('-')[2]}일</div>
                     <span class="badge \${ev.type}">\${badgeMap[ev.type]}</span>
                     <div class="event-info">
                         <div class="event-title">\${ev.title}</div>
                         <div class="event-detail">\${ev.detail}</div>
                     </div>
+                    \${isToday ? '<div class="today-label">오늘</div>' : ''}
                 </div>
             \`;
         });

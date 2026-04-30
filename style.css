@@ -192,6 +192,45 @@ input:checked + .check-mark::after {
     transform: none;
 }
 
+.calendar-table td.today {
+    background: #eff6ff;
+    position: relative;
+}
+
+.calendar-table td.today::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--primary-color);
+}
+
+.calendar-table td.today .calendar-day-header {
+    color: var(--primary-color);
+}
+
+.event-card.today-highlight {
+    border-left: 4px solid var(--primary-color);
+    background: #eff6ff;
+    position: relative;
+}
+
+.today-label {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--primary-color);
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
 /* Content Area */
 .content-area {
     grid-area: main;
