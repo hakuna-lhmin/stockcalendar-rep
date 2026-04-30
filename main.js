@@ -332,4 +332,6 @@ class CalendarManager {
     }
 }
 
-window.calendar = new CalendarManager();
+document.addEventListener('DOMContentLoaded', () => {
+    window.calendar = new CalendarManager();
+});
